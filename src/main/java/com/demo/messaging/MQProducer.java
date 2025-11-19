@@ -77,11 +77,21 @@ public class MQProducer {
                     .build()
                     .toString();
 
+        } catch (JMSException e) {
+            // JMSのチェック例外（IBM MQ の MQRC などが linked にぶら下がることが多い）
+            System.err.println("[ERROR] JMSException: " + e.getMessage());
+            Exception linked = e.getLinkedException();
+            if (linked != null) {
+                System.err.println("[ERROR] Linked exception: " + linked);
+            }
+            throw new Exception("リモートキューへの送信に失敗しました: " + e.getMessage(), e);
+
         } catch (JMSRuntimeException e) {
-            // ここに MQ の詳細（MQRC）がぶら下がることが多い
+            // 簡易APIや実装側からのランタイム例外。詳細は cause に入ることが多い。
             System.err.println("[ERROR] JMSRuntimeException: " + e.getMessage());
-            if (e.getLinkedException() != null) {
-                System.err.println("[ERROR] Linked exception: " + e.getLinkedException());
+            Throwable cause = e.getCause();
+            if (cause != null) {
+                System.err.println("[ERROR] Cause: " + cause);
             }
             throw new Exception("リモートキューへの送信に失敗しました: " + e.getMessage(), e);
 
